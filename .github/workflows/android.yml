@@ -36,6 +36,17 @@ jobs:
           python -m pip install --upgrade pip
           pip install cython==0.29.37 buildozer==1.5.0
 
+      - name: Accept Android SDK licenses
+        run: |
+          export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
+          mkdir -p $ANDROID_HOME/licenses
+          # เขียน license hash ตรงๆ ไม่ต้องรอ interactive prompt
+          echo -e "\n8933bad161af4178b1185d1a37fbf41ea5269c55" > $ANDROID_HOME/licenses/android-sdk-license
+          echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" >> $ANDROID_HOME/licenses/android-sdk-license
+          echo -e "\nd975f751698a77b662f1254ddbeed3901e976f5a" > $ANDROID_HOME/licenses/android-sdk-preview-license
+          echo -e "\n33b6a2b64607f11b759f320ef9dff4ae5c47d97a" > $ANDROID_HOME/licenses/google-gdk-license
+          echo "✓ Accept licenses เรียบร้อย"
+
       - name: Build APK
         run: |
           buildozer android debug 2>&1 | tee build.log
