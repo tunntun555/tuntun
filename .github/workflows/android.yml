@@ -39,6 +39,20 @@ jobs:
       - name: Build APK
         run: |
           buildozer android debug 2>&1 | tee build.log
+          echo "=== ตรวจสอบไฟล์ใน bin/ ==="
+          ls -la bin/ || echo "ไม่มีโฟลเดอร์ bin/"
+          echo "=== 50 บรรทัดสุดท้ายของ log ==="
+          tail -50 build.log
+
+      - name: ตรวจว่ามี APK จริง
+        run: |
+          if ls bin/*.apk 1> /dev/null 2>&1; then
+            echo "✓ พบ APK:"
+            ls -lh bin/*.apk
+          else
+            echo "✗ ไม่พบ APK — ดู build.log"
+            exit 1
+          fi
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -46,8 +60,8 @@ jobs:
           name: apk
           path: bin/*.apk
 
-      - name: Upload build log (ถ้า build ล้มเหลว)
-        if: failure()
+      - name: Upload build log
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: build-log
