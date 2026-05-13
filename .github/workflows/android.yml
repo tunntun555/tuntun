@@ -36,16 +36,39 @@ jobs:
           python -m pip install --upgrade pip
           pip install cython==0.29.37 buildozer==1.5.0
 
-      - name: Accept Android SDK licenses
+      - name: Setup Android SDK (cmdline-tools + licenses)
         run: |
-          export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
-          mkdir -p $ANDROID_HOME/licenses
-          # เขียน license hash ตรงๆ ไม่ต้องรอ interactive prompt
-          echo -e "\n8933bad161af4178b1185d1a37fbf41ea5269c55" > $ANDROID_HOME/licenses/android-sdk-license
-          echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" >> $ANDROID_HOME/licenses/android-sdk-license
-          echo -e "\nd975f751698a77b662f1254ddbeed3901e976f5a" > $ANDROID_HOME/licenses/android-sdk-preview-license
-          echo -e "\n33b6a2b64607f11b759f320ef9dff4ae5c47d97a" > $ANDROID_HOME/licenses/google-gdk-license
-          echo "✓ Accept licenses เรียบร้อย"
+          export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
+          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
+
+          # ดาวน์โหลด cmdline-tools
+          cd /tmp
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          unzip -q commandlinetools-linux-11076708_latest.zip
+          mv cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
+
+          # สร้าง symlink ที่ buildozer คาดหวัง (tools/bin/sdkmanager)
+          mkdir -p $ANDROID_SDK_ROOT/tools/bin
+          ln -sf $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager \
+                 $ANDROID_SDK_ROOT/tools/bin/sdkmanager
+
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
+
+          # Accept licenses
+          mkdir -p $ANDROID_SDK_ROOT/licenses
+          echo -e "\n8933bad161af4178b1185d1a37fbf41ea5269c55" > $ANDROID_SDK_ROOT/licenses/android-sdk-license
+          echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" >> $ANDROID_SDK_ROOT/licenses/android-sdk-license
+          echo -e "\nd975f751698a77b662f1254ddbeed3901e976f5a" > $ANDROID_SDK_ROOT/licenses/android-sdk-preview-license
+          yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses || true
+
+          # ติดตั้ง build-tools และ platform ที่ต้องการ
+          yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT \
+            "platform-tools" \
+            "build-tools;34.0.0" \
+            "platforms;android-33" || true
+
+          echo "✓ Android SDK พร้อม"
+          ls $ANDROID_SDK_ROOT/
 
       - name: Build APK
         run: |
